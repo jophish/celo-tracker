@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@celo/contractkit": "^1.2.4",
+    "@ubeswap/default-token-list": "^3.3.4",
+    "axios": "^0.21.1",
+    "bignumber.js": "^9.0.1",
     "react": "^17.0.2",
+    "react-async-hook": "^3.6.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
     "web-vitals": "^1.0.1"
@@ -25,7 +30,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint src"
   },
   "eslintConfig": {
     "extends": [
@@ -33,7 +39,14 @@
       "react-app/jest"
     ],
     "rules": {
-      "quotes": ["error", "single"]
+      "indent": [
+        "error",
+        2
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ]
     }
   },
   "browserslist": {
