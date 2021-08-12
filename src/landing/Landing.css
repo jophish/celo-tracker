@@ -13,6 +13,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  text-align: center;
 }
 
 .title {
@@ -21,7 +22,8 @@
 }
 
 .subtitle {
-  margin: 0;
+  margin: 0 10px;
+  text-align: center;
 }
 
 .input-address-label {
@@ -33,4 +35,15 @@
   padding: 8px;
   text-align: center;
   font-size: 18px;
+}
+
+@media only screen and (max-width: 600px) {
+  .subtitle {
+    width: 80%;
+  }
+
+  .input-address {
+    width: 90%;
+    font-size: 16px;
+  }
 }

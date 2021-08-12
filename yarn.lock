@@ -2476,10 +2476,10 @@
     "@typescript-eslint/types" "4.28.3"
     eslint-visitor-keys "^2.0.0"
 
-"@ubeswap/default-token-list@^3.3.4":
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/@ubeswap/default-token-list/-/default-token-list-3.3.4.tgz#7900a5eef129aa90e58001d4db111bc280b54e1e"
-  integrity sha512-TH5eOq/xxPj93UMYOiHFT0EeI3K2ZyNBTSF3iKLjXuoGZ+OSiiYRctmUxVudYRsMyso6sesAaYzR5YGWOQ5MCA==
+"@ubeswap/default-token-list@^3.3.5":
+  version "3.3.5"
+  resolved "https://registry.yarnpkg.com/@ubeswap/default-token-list/-/default-token-list-3.3.5.tgz#1eb767a8380757589a5bb337285146993cf379b3"
+  integrity sha512-yeTgn37eL70T/89FElOCs5/G7PkuM+IpBw+JdWQLX6RFN47a5/5JrP85e+YDZakuVRSLqcT4rihImYeauE99dw==
 
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
@@ -10459,6 +10459,11 @@ react-error-overlay@^6.0.9:
   version "6.0.9"
   resolved "https://registry.yarnpkg.com/react-error-overlay/-/react-error-overlay-6.0.9.tgz#3c743010c9359608c375ecd6bc76f35d93995b0a"
   integrity sha512-nQTTcUu+ATDbrSD1BZHr5kgSD4oF8OFjxun8uAaL8RwPBacGBNPf/yAuVVdx17N8XNzRDMrZ9XcKZHCjPW+9ew==
+
+react-ga@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/react-ga/-/react-ga-3.3.0.tgz#c91f407198adcb3b49e2bc5c12b3fe460039b3ca"
+  integrity sha512-o8RScHj6Lb8cwy3GMrVH6NJvL+y0zpJvKtc0+wmH7Bt23rszJmnqEQxRbyrqUzk9DTJIHoP42bfO5rswC9SWBQ==
 
 react-is@^16.8.1:
   version "16.13.1"
