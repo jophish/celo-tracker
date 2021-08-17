@@ -13,6 +13,7 @@ import { range } from '../helpers/utils';
 const UBE_FACTORY = '0x62d5b84bE28a183aBB507E125B384122D2C25fAE';
 const POOL_MANAGER = '0x9Ee3600543eCcc85020D6bc77EB553d1747a65D2';
 const USD_TOKEN_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a'
+const CELO_TOKEN_ADDRESS = '0x471EcE3750Da237f93B8E339c536989b8978a438'
 const mcUSD_TOKEN_ADDRESS = '0x64dEFa3544c695db8c535D289d843a189aa26b98';
 
 const POOF_DUAL_POOL = '0x969D7653ddBAbb42589d73EfBC2051432332A940'
@@ -46,6 +47,7 @@ export async function fetchTokenAmounts(address: string): Promise<TokenAmount[]>
   const tokenInfos = await Promise.all(tokens.map(async token => {
     const erc20 = contract(kit, erc20Abi, token.address);
     const balance = await erc20.methods.balanceOf(address).call();
+    console.log(token.symbol + ' - ' + balance)
     return {
       balance: new BigNumber(balance),
       name: token.name,
@@ -109,9 +111,6 @@ export async function getUbeswapPooledTokens(address: string): Promise<PooledTok
     const total = await rewards.methods.totalSupply().call();
     const share = own / total;
 
-    const t = await rewards.methods.stakingToken().call()
-    console.log(pool.stakingToken, t)
-
     const pairTotal = await pair.methods.totalSupply().call();
     const pairOwn = await pair.methods.balanceOf(pool.rewardsAddress ?? pool.poolAddress).call();
     const pairShare = pairOwn / pairTotal;
@@ -169,17 +168,20 @@ async function tokenUsdPrice(tokenAddress: string) {
   return await exchangeRateBetweenTokens(tokenAddress, USD_TOKEN_ADDRESS)
 }
 
+const POOF_ADDRESS = '0x00400FcbF0816bebB94654259de7273f4A05c762'
 // TODO: It would be better to get prices from a third-party API like coingecko.
 export async function fetchTokenPrices(tokenAddresses: string[]) {
   const prices: { [token: string]: number } = {};
   for (const tokenAddress of tokenAddresses) {
     const tokenName = getTokenName(tokenAddress)
-    if (!tokenName) continue
+    if (!tokenName || tokenAddress === POOF_ADDRESS) continue
     if (['cusd', 'mcusd'].includes(tokenName.toLowerCase())) {
       prices[tokenName] = 1
     } else {
       prices[tokenName] = await tokenUsdPrice(tokenAddress)
     }
   }
+  const poofPriceInCelo = await exchangeRateBetweenTokens(POOF_ADDRESS, CELO_TOKEN_ADDRESS)
+  prices['POOF'] = poofPriceInCelo * prices[getTokenName(CELO_TOKEN_ADDRESS)!]
   return prices;
 }

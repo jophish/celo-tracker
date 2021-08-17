@@ -16,7 +16,6 @@ function App({ address, onClearAddress }: Props) {
   const { loading, error, result: tokensInfo } = useAsync(async () => {
     const tokenAmounts: TokenAmount[] = await fetchTokenAmounts(address)
     const ubeswapPooledTokens: PooledToken[] = await getUbeswapPooledTokens(address)
-    console.log(ubeswapPooledTokens)
     const lockedCelo = await fetchLockedCelo(address)
 
     const allTokenAddresses = tokenAmounts.map(tokenAmount => tokenAmount.address)
@@ -46,7 +45,7 @@ function App({ address, onClearAddress }: Props) {
       .plus(tokensInfo.ubeswapPooledTokens.reduce((total, item) => total.plus(item.usdPrice!), new BigNumber(0)))
       .plus(tokensInfo.lockedCelo.usdPrice.dividedBy(1E18))
     
-    trackEvent('Balance', 'Total', total.toNumber())
+    trackEvent('Balance', { total: total.toNumber() })
 
     return {
       ...tokensInfo,
@@ -61,7 +60,8 @@ function App({ address, onClearAddress }: Props) {
         <button className="clear-address" onClick={onClearAddress}>Logout</button>
       </div>
       <h2 className="subtitle">Total</h2>
-      <p className="subtitle">${!tokensInfo?.total ? '...' : tokensInfo?.total.toNumber().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+      <p className="balance">${!tokensInfo?.total ? '...' : tokensInfo?.total.toNumber().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+      <p className="disclaimer">Note that dollar values are estimates based on exchange rates on Ubeswap and may be slightly off</p>
       <div className="details-container">
         <div className="details-column">
           <h2 className="detail-title">Tokens</h2>

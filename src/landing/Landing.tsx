@@ -16,7 +16,7 @@ function Landing({ onAddressSet }: Props) {
     if (newAddress.length === 42 && newAddress.startsWith('0x')) {
       onAddressSet(newAddress)
       saveValue(StorageKey.Address, newAddress)
-      trackEvent('Address', 'Set');
+      trackEvent('SetAddress', { address: newAddress });
     }
   }
 
