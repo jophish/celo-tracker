@@ -4,5 +4,5 @@ export function trackEvent(name: string, payload?: any) {
     return
   }
   // @ts-ignore
-  window.splitbee.track(name, payload)
+  window.splitbee?.track(name, payload)
 }
