@@ -13,6 +13,7 @@ function Router() {
     if (params.address && params.address.length === 42 && params.address.startsWith('0x')) {
       setAddress(params.address)
       saveValue(StorageKey.Address, params.address)
+      window.history.replaceState(null, '', window.location.pathname);
       return
     }
     const storedAddress = readValue(StorageKey.Address)

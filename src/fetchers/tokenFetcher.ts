@@ -35,7 +35,6 @@ export async function fetchTokenAmounts(address: string): Promise<TokenAmount[]>
   const tokenInfos = await Promise.all(tokens.map(async token => {
     const erc20 = contract(kit, erc20Abi, token.address);
     const balance = await erc20.methods.balanceOf(address).call();
-    // console.log(token.symbol + ' - ' + balance)
     return {
       balance: new BigNumber(balance),
       name: token.name,
@@ -177,34 +176,41 @@ const MOO_ADDRESS = '0x17700282592D6917F6A73D0bF8AcCf4D578c131e'
 const mCELO_ADDRESS = '0x7037F7296B2fc7908de7b57a89efaa8319f0C500'
 const MCO2_ADDRESS = '0x32A9FE697a32135BFd313a6Ac28792DaE4D9979d'
 const NTMX_ADDRESS = '0x123ED050805E0998EBEf43671327139224218e50'
+const LAPIS_ADDRESS = '0x18414Ce6dAece0365f935F3e78A7C1993e77d8Cd'
 
 const UBE_ADDRESS = '0x00Be915B9dCf56a3CBE739D9B9c202ca692409EC'
+const DEFAULT_ADDRESSES = [CELO_TOKEN_ADDRESS, UBE_ADDRESS]
+
+interface Prices {
+  [token: string]: number
+}
+
+async function addPriceOf(prices: Prices, tokenName: string, tokenAddress: string, baseToken: string, baseAddress: string) {
+  const priceInBaseToken = await exchangeRateBetweenTokens(tokenAddress, baseAddress)
+  console.log('Z', tokenName, priceInBaseToken, prices[baseToken])
+  prices[tokenName] = priceInBaseToken * prices[baseToken]
+}
 
 // TODO: It would be better to get prices from a third-party API like coingecko.
 export async function fetchTokenPrices(tokenAddresses: string[]) {
-  const prices: { [token: string]: number } = {};
-  const addressesWithPaths = [POOF_ADDRESS, rCELO_ADDRESS, MOO_ADDRESS, mCELO_ADDRESS, MCO2_ADDRESS, NTMX_ADDRESS]
-  await Promise.all(tokenAddresses.map(async tokenAddress => {
+  const prices: Prices = {};
+  const addressesWithPaths = [POOF_ADDRESS, rCELO_ADDRESS, MOO_ADDRESS, mCELO_ADDRESS, MCO2_ADDRESS, NTMX_ADDRESS, LAPIS_ADDRESS]
+  const addressesToFetch = Array.from(new Set(tokenAddresses.concat(DEFAULT_ADDRESSES)))
+  await Promise.all(addressesToFetch.map(async tokenAddress => {
     const tokenName = getTokenName(tokenAddress)
     if (!tokenName || addressesWithPaths.includes(tokenAddress)) return
     if (['cusd', 'mcusd'].includes(tokenName.toLowerCase())) {
       prices[tokenName] = 1
     } else {
-      console.log(tokenName)
       prices[tokenName] = await tokenUsdPrice(tokenAddress)
-      console.log(tokenName, prices[tokenName])
     }
   }))
-  const poofPriceInCelo = await exchangeRateBetweenTokens(POOF_ADDRESS, CELO_TOKEN_ADDRESS)
-  prices['POOF'] = poofPriceInCelo * prices['CELO']
-  const rCeloPriceInCelo = await exchangeRateBetweenTokens(rCELO_ADDRESS, CELO_TOKEN_ADDRESS)
-  prices['rCELO'] = rCeloPriceInCelo * prices['CELO']
   prices['mCELO'] = prices['CELO']
-  const mooPriceInCelo = await exchangeRateBetweenTokens(MOO_ADDRESS, mCELO_ADDRESS)
-  prices['MOO'] = mooPriceInCelo * prices['mCELO']
-  const cMco2PriceInUbe = await exchangeRateBetweenTokens(MCO2_ADDRESS, UBE_ADDRESS)
-  prices['cMCO2'] = cMco2PriceInUbe * prices['UBE']
-  const ntmxPriceInCelo = await exchangeRateBetweenTokens(NTMX_ADDRESS, CELO_TOKEN_ADDRESS)
-  prices['NTMX'] = ntmxPriceInCelo * prices['CELO']
+  if (tokenAddresses.includes(POOF_ADDRESS)) await addPriceOf(prices, 'POOF', POOF_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
+  if (tokenAddresses.includes(rCELO_ADDRESS)) await addPriceOf(prices, 'rCELO', rCELO_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
+  if (tokenAddresses.includes(MOO_ADDRESS)) await addPriceOf(prices, 'MOO', MOO_ADDRESS, 'mCELO', mCELO_ADDRESS)
+  if (tokenAddresses.includes(MCO2_ADDRESS)) await addPriceOf(prices, 'cMCO2', MCO2_ADDRESS, 'UBE', UBE_ADDRESS)
+  if (tokenAddresses.includes(NTMX_ADDRESS)) await addPriceOf(prices, 'NTMX', NTMX_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
+  if (tokenAddresses.includes(LAPIS_ADDRESS)) await addPriceOf(prices, 'LAPIS', LAPIS_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
   return prices;
 }

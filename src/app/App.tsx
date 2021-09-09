@@ -23,7 +23,7 @@ function App({ address, onClearAddress }: Props) {
     const allTokenAddresses = tokenAmounts.map(tokenAmount => tokenAmount.address)
       .concat(...allPooledTokens.map(pooledToken => pooledToken.tokens))
     
-    const prices = await fetchTokenPrices(Array.from(new Set(allTokenAddresses)))
+    const prices = await fetchTokenPrices(allTokenAddresses)
     for (const tokenInfo of tokenAmounts) {
       tokenInfo.usdPrice = tokenInfo.balance.multipliedBy(prices[tokenInfo.symbol])
     }
