@@ -16,18 +16,6 @@ const USD_TOKEN_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a'
 const CELO_TOKEN_ADDRESS = '0x471EcE3750Da237f93B8E339c536989b8978a438'
 const mcUSD_TOKEN_ADDRESS = '0x64dEFa3544c695db8c535D289d843a189aa26b98';
 
-const POOF_DUAL_POOL = '0x969D7653ddBAbb42589d73EfBC2051432332A940'
-const POOF_DUAL_LP = '0x573bcEBD09Ff805eD32df2cb1A968418DC74DCf7'
-const POOF_REWARDS = '0xC88B8d622c0322fb59ae4473D7A1798DE60785dD'
-
-const MOO_DUAL_POOL1 = '0x2f0ddEAa9DD2A0FB78d41e58AD35373d6A81EbB0'
-const MOO_REWARDS_1 = '0xaf13437122cd537C5D8942f17787cbDBd787fE94'
-const MOO_LP1 = '0x27616d3DBa43f55279726c422daf644bc60128a8'
-
-const MOO_DUAL_POOL2 = '0x84Bb1795b699Bf7a798C0d63e9Aad4c96B0830f4'
-const MOO_LP2 = '0x69d5646e63C7cE63171F76EBA89348b52c1D552c'
-const MOO_REWARDS_2 = '0xC087aEcAC0a4991f9b0e931Ce2aC77a826DDdaf3'
-
 function contract(kit: ContractKit, contractAbi: any, address: string) {
   return new kit.web3.eth.Contract(contractAbi, address);
 }
@@ -47,7 +35,7 @@ export async function fetchTokenAmounts(address: string): Promise<TokenAmount[]>
   const tokenInfos = await Promise.all(tokens.map(async token => {
     const erc20 = contract(kit, erc20Abi, token.address);
     const balance = await erc20.methods.balanceOf(address).call();
-    console.log(token.symbol + ' - ' + balance)
+    // console.log(token.symbol + ' - ' + balance)
     return {
       balance: new BigNumber(balance),
       name: token.name,
@@ -70,6 +58,67 @@ export interface PooledToken {
   usdPrice?: BigNumber
 }
 
+async function getShareOfStakingRewards(kit: ContractKit, contractAddress: string, owner: string) {
+  const rewards = contract(kit, stakingRewardsInterface, contractAddress);
+  const own = await rewards.methods.balanceOf(owner).call();
+  if (own === '0') return 0;
+  const total = await rewards.methods.totalSupply().call();
+  return own / total;
+}
+
+async function getTokensInPool(kit: ContractKit, pairContractAddress: string, share: number) {
+  const pair = contract(kit, pairContractInterface.abi, pairContractAddress);
+  const { reserve0, reserve1 } = await pair.methods.getReserves().call();
+    
+  const ownReserve0 = share * reserve0;
+  const ownReserve1 = share * reserve1;
+
+  const token0 = await pair.methods.token0().call()
+  const token1 = await pair.methods.token1().call()
+  const token0Name = getTokenName(token0);
+  const token1Name = getTokenName(token1);
+
+  if (!token0Name || !token1Name || ownReserve0 === 0 || ownReserve1 === 0) {
+    return null
+  }
+  return {
+    balances: {
+      [token0Name]: ownReserve0 / 1e18,
+      [token1Name]: ownReserve1 / 1e18,
+    },
+    tokens: [token0, token1]
+  };
+}
+
+export async function getTripleRewardPool(address: string): Promise<PooledToken[]> {
+  const poolsInfo = [
+    {
+      // mcUSD-mcEUR
+      poolAddress: '0x27616d3DBa43f55279726c422daf644bc60128a8',
+      simpleStaking: '0xaf13437122cd537C5D8942f17787cbDBd787fE94',
+      doubleStaking: '0xb030882BfC44e223FD5e20d8645C961BE9b30BB3',
+      tripleStaking: '0x3d823f7979bB3af846D8F1a7d98922514eA203fC'
+    }, {
+      // mCELO-MOO
+      poolAddress: '0x69d5646e63C7cE63171F76EBA89348b52c1D552c',
+      simpleStaking: '0xC087aEcAC0a4991f9b0e931Ce2aC77a826DDdaf3',
+      doubleStaking: '0x8f309dF7527F16dff49065D3338ea3F3c12B5d09',
+      tripleStaking: '0x3c7beeA32A49D96d72ce45C7DeFb5b287479C2ba'
+    }
+  ]
+  const kit = await getContractKit()
+  const tokensInfo = await Promise.all(poolsInfo.map(async poolInfo => {
+    const tripleShare = await getShareOfStakingRewards(kit, poolInfo.tripleStaking, address)
+    const doubleShare = await getShareOfStakingRewards(kit, poolInfo.doubleStaking, poolInfo.tripleStaking)
+    const singleShare = await getShareOfStakingRewards(kit, poolInfo.simpleStaking, poolInfo.doubleStaking)
+    const baseShare = await getShareOfStakingRewards(kit, poolInfo.poolAddress, poolInfo.simpleStaking)
+    const overallShare = tripleShare * doubleShare * singleShare * baseShare
+    const q = await getTokensInPool(kit, poolInfo.poolAddress, overallShare)
+    return getTokensInPool(kit, poolInfo.poolAddress, overallShare)
+  }))
+  return tokensInfo.filter(tokensInfo => tokensInfo !== null) as PooledToken[]
+}
+
 export async function getUbeswapPooledTokens(address: string): Promise<PooledToken[]> {
   const kit = await getContractKit()
   const poolManager = contract(kit, poolManagerInterface, POOL_MANAGER);
@@ -82,59 +131,13 @@ export async function getUbeswapPooledTokens(address: string): Promise<PooledTok
     })
   );
 
-  const poolPromises = pools.concat([{
-    stakingToken: POOF_DUAL_LP,
-    poolAddress: POOF_DUAL_POOL,
-    rewardsAddress: POOF_REWARDS,
-  }, {
-    stakingToken: MOO_LP1,
-    poolAddress: MOO_DUAL_POOL1,
-    rewardsAddress: MOO_REWARDS_1,
-  }, {
-    stakingToken: MOO_LP2,
-    poolAddress: MOO_DUAL_POOL2,
-    rewardsAddress: MOO_REWARDS_2,
-  }]).map(async (pool) => {
-    const pair = contract(kit, pairContractInterface.abi, pool.stakingToken);
+  const balancePartials = await Promise.all(pools.map(async (pool) => {
+    const poolShare = await getShareOfStakingRewards(kit, pool.poolAddress, address)
+    const baseShare = await getShareOfStakingRewards(kit, pool.stakingToken, pool.poolAddress)
+    return getTokensInPool(kit, pool.stakingToken, poolShare * baseShare)
+  }));
 
-    const token0 = await pair.methods.token0().call()
-    const token1 = await pair.methods.token1().call()
-    const token0Name = getTokenName(token0);
-    const token1Name = getTokenName(token1);
-    if (!token0Name || !token1Name) {
-      return null
-    }
-
-    const rewards = contract(kit, stakingRewardsInterface, pool.poolAddress);
-    const own = await rewards.methods.balanceOf(address).call();
-    if (own === '0') return null;
-    const total = await rewards.methods.totalSupply().call();
-    const share = own / total;
-
-    const pairTotal = await pair.methods.totalSupply().call();
-    const pairOwn = await pair.methods.balanceOf(pool.rewardsAddress ?? pool.poolAddress).call();
-    const pairShare = pairOwn / pairTotal;
-    const { reserve0, reserve1 } = await pair.methods.getReserves().call();
-    
-    const ownReserve0 = share * (pairShare * reserve0);
-    const ownReserve1 = share * (pairShare * reserve1);
-
-    return {
-      amounts: {
-        [token0Name]: ownReserve0 / 1e18,
-        [token1Name]: ownReserve1 / 1e18,
-      },
-      tokens: [token0, token1]
-    };
-  })
-  const balancePartials = await Promise.all(poolPromises);
-
-  return balancePartials
-    .filter(balances => !!balances)
-    .map(balances => ({
-      balances: balances!.amounts,
-      tokens: balances!.tokens
-    })) as PooledToken[]
+  return balancePartials.filter(balances => !!balances) as PooledToken[]
 }
 
 async function exchangeRateBetweenTokens(token1: string, token2: string) {
@@ -169,19 +172,39 @@ async function tokenUsdPrice(tokenAddress: string) {
 }
 
 const POOF_ADDRESS = '0x00400FcbF0816bebB94654259de7273f4A05c762'
+const rCELO_ADDRESS = '0x1a8Dbe5958c597a744Ba51763AbEBD3355996c3e'
+const MOO_ADDRESS = '0x17700282592D6917F6A73D0bF8AcCf4D578c131e'
+const mCELO_ADDRESS = '0x7037F7296B2fc7908de7b57a89efaa8319f0C500'
+const MCO2_ADDRESS = '0x32A9FE697a32135BFd313a6Ac28792DaE4D9979d'
+const NTMX_ADDRESS = '0x123ED050805E0998EBEf43671327139224218e50'
+
+const UBE_ADDRESS = '0x00Be915B9dCf56a3CBE739D9B9c202ca692409EC'
+
 // TODO: It would be better to get prices from a third-party API like coingecko.
 export async function fetchTokenPrices(tokenAddresses: string[]) {
   const prices: { [token: string]: number } = {};
-  for (const tokenAddress of tokenAddresses) {
+  const addressesWithPaths = [POOF_ADDRESS, rCELO_ADDRESS, MOO_ADDRESS, mCELO_ADDRESS, MCO2_ADDRESS, NTMX_ADDRESS]
+  await Promise.all(tokenAddresses.map(async tokenAddress => {
     const tokenName = getTokenName(tokenAddress)
-    if (!tokenName || tokenAddress === POOF_ADDRESS) continue
+    if (!tokenName || addressesWithPaths.includes(tokenAddress)) return
     if (['cusd', 'mcusd'].includes(tokenName.toLowerCase())) {
       prices[tokenName] = 1
     } else {
+      console.log(tokenName)
       prices[tokenName] = await tokenUsdPrice(tokenAddress)
+      console.log(tokenName, prices[tokenName])
     }
-  }
+  }))
   const poofPriceInCelo = await exchangeRateBetweenTokens(POOF_ADDRESS, CELO_TOKEN_ADDRESS)
-  prices['POOF'] = poofPriceInCelo * prices[getTokenName(CELO_TOKEN_ADDRESS)!]
+  prices['POOF'] = poofPriceInCelo * prices['CELO']
+  const rCeloPriceInCelo = await exchangeRateBetweenTokens(rCELO_ADDRESS, CELO_TOKEN_ADDRESS)
+  prices['rCELO'] = rCeloPriceInCelo * prices['CELO']
+  prices['mCELO'] = prices['CELO']
+  const mooPriceInCelo = await exchangeRateBetweenTokens(MOO_ADDRESS, mCELO_ADDRESS)
+  prices['MOO'] = mooPriceInCelo * prices['mCELO']
+  const cMco2PriceInUbe = await exchangeRateBetweenTokens(MCO2_ADDRESS, UBE_ADDRESS)
+  prices['cMCO2'] = cMco2PriceInUbe * prices['UBE']
+  const ntmxPriceInCelo = await exchangeRateBetweenTokens(NTMX_ADDRESS, CELO_TOKEN_ADDRESS)
+  prices['NTMX'] = ntmxPriceInCelo * prices['CELO']
   return prices;
 }

@@ -2802,10 +2802,10 @@
     "@typescript-eslint/types" "4.28.3"
     eslint-visitor-keys "^2.0.0"
 
-"@ubeswap/default-token-list@^3.3.5":
-  version "3.3.5"
-  resolved "https://registry.yarnpkg.com/@ubeswap/default-token-list/-/default-token-list-3.3.5.tgz#1eb767a8380757589a5bb337285146993cf379b3"
-  integrity sha512-yeTgn37eL70T/89FElOCs5/G7PkuM+IpBw+JdWQLX6RFN47a5/5JrP85e+YDZakuVRSLqcT4rihImYeauE99dw==
+"@ubeswap/default-token-list@^3.3.8":
+  version "3.3.8"
+  resolved "https://registry.yarnpkg.com/@ubeswap/default-token-list/-/default-token-list-3.3.8.tgz#59809c9fc54c53219cc42579b2dd53ace284729b"
+  integrity sha512-7q4aRo2FvSG4a3G0OoKs+wRMgfCPV18p3LG59HzRMbiiHsXkfCvl1eTlEPJuSVY+Gi15Cz24UQp4F6U8tkNlQQ==
 
 "@walletconnect/client@2.0.0-beta.0":
   version "2.0.0-beta.0"

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import React from 'react';
 import { useAsync } from 'react-async-hook';
 import { fetchLockedCelo } from '../fetchers/lockedCelo';
-import { fetchTokenAmounts, fetchTokenPrices, getUbeswapPooledTokens, PooledToken, TokenAmount } from '../fetchers/tokenFetcher';
+import { fetchTokenAmounts, fetchTokenPrices, getTripleRewardPool, getUbeswapPooledTokens, PooledToken, TokenAmount } from '../fetchers/tokenFetcher';
 import { trackEvent } from '../utils/analytics';
 import './App.css';
 
@@ -16,22 +16,26 @@ function App({ address, onClearAddress }: Props) {
   const { loading, error, result: tokensInfo } = useAsync(async () => {
     const tokenAmounts: TokenAmount[] = await fetchTokenAmounts(address)
     const ubeswapPooledTokens: PooledToken[] = await getUbeswapPooledTokens(address)
+    const tripleRewardTokens: PooledToken[] = await getTripleRewardPool(address)
+    const allPooledTokens = ubeswapPooledTokens.concat(tripleRewardTokens)
     const lockedCelo = await fetchLockedCelo(address)
 
     const allTokenAddresses = tokenAmounts.map(tokenAmount => tokenAmount.address)
-      .concat(...ubeswapPooledTokens.map(pooledToken => pooledToken.tokens))
+      .concat(...allPooledTokens.map(pooledToken => pooledToken.tokens))
+    
     const prices = await fetchTokenPrices(Array.from(new Set(allTokenAddresses)))
     for (const tokenInfo of tokenAmounts) {
       tokenInfo.usdPrice = tokenInfo.balance.multipliedBy(prices[tokenInfo.symbol])
     }
-    for (const pooledToken of ubeswapPooledTokens) {
+    for (const pooledToken of allPooledTokens) {
       pooledToken.usdPrice = Object.keys(pooledToken.balances)
         .map(tokenSymbol => new BigNumber(prices[tokenSymbol]).multipliedBy(pooledToken.balances[tokenSymbol]))
         .reduce((total, tokenPrice) => total.plus(tokenPrice), new BigNumber(0))
     }
+    
     const tokensInfo = {
       tokenAmounts,
-      ubeswapPooledTokens,
+      ubeswapPooledTokens: allPooledTokens,
       lockedCelo: {
         available: lockedCelo?.total.gt(0) || lockedCelo?.nonvoting.gt(0),
         total: lockedCelo?.total,

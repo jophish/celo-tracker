@@ -1,11 +1,12 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { saveValue, StorageKey } from '../helpers/storage';
-import './Landing.css';
 import { trackEvent } from '../utils/analytics';
+import './Landing.css';
 
 type Props = {
   onAddressSet: (address: string) => void
 }
+
 // 0x32a3f09d0DDd1eb09949A7bdd8c02887894Ffc60
 function Landing({ onAddressSet }: Props) {
   const [address, setAddress] = useState('')

@@ -37,6 +37,12 @@
   font-size: 18px;
 }
 
+.connect-wallet {
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 10px;
+}
+
 @media only screen and (max-width: 600px) {
   .subtitle {
     width: 80%;
