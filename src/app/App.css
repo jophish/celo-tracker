@@ -13,6 +13,12 @@
   color: #888;
 }
 
+.error {
+  margin: 10px;
+  text-align: center;
+  color: red;
+}
+
 .header {
   width: 100%;
   display: flex;

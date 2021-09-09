@@ -177,9 +177,10 @@ const mCELO_ADDRESS = '0x7037F7296B2fc7908de7b57a89efaa8319f0C500'
 const MCO2_ADDRESS = '0x32A9FE697a32135BFd313a6Ac28792DaE4D9979d'
 const NTMX_ADDRESS = '0x123ED050805E0998EBEf43671327139224218e50'
 const LAPIS_ADDRESS = '0x18414Ce6dAece0365f935F3e78A7C1993e77d8Cd'
+const cSTAR_ADDRESS = '0x452EF5a4bD00796e62E5e5758548e0dA6e8CCDF3'
 
 const UBE_ADDRESS = '0x00Be915B9dCf56a3CBE739D9B9c202ca692409EC'
-const DEFAULT_ADDRESSES = [CELO_TOKEN_ADDRESS, UBE_ADDRESS]
+const DEFAULT_ADDRESSES = [CELO_TOKEN_ADDRESS, UBE_ADDRESS, USD_TOKEN_ADDRESS, mcUSD_TOKEN_ADDRESS]
 
 interface Prices {
   [token: string]: number
@@ -187,14 +188,13 @@ interface Prices {
 
 async function addPriceOf(prices: Prices, tokenName: string, tokenAddress: string, baseToken: string, baseAddress: string) {
   const priceInBaseToken = await exchangeRateBetweenTokens(tokenAddress, baseAddress)
-  console.log('Z', tokenName, priceInBaseToken, prices[baseToken])
   prices[tokenName] = priceInBaseToken * prices[baseToken]
 }
 
 // TODO: It would be better to get prices from a third-party API like coingecko.
 export async function fetchTokenPrices(tokenAddresses: string[]) {
   const prices: Prices = {};
-  const addressesWithPaths = [POOF_ADDRESS, rCELO_ADDRESS, MOO_ADDRESS, mCELO_ADDRESS, MCO2_ADDRESS, NTMX_ADDRESS, LAPIS_ADDRESS]
+  const addressesWithPaths = [POOF_ADDRESS, rCELO_ADDRESS, MOO_ADDRESS, mCELO_ADDRESS, MCO2_ADDRESS, NTMX_ADDRESS, LAPIS_ADDRESS, cSTAR_ADDRESS]
   const addressesToFetch = Array.from(new Set(tokenAddresses.concat(DEFAULT_ADDRESSES)))
   await Promise.all(addressesToFetch.map(async tokenAddress => {
     const tokenName = getTokenName(tokenAddress)
@@ -212,5 +212,6 @@ export async function fetchTokenPrices(tokenAddresses: string[]) {
   if (tokenAddresses.includes(MCO2_ADDRESS)) await addPriceOf(prices, 'cMCO2', MCO2_ADDRESS, 'UBE', UBE_ADDRESS)
   if (tokenAddresses.includes(NTMX_ADDRESS)) await addPriceOf(prices, 'NTMX', NTMX_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
   if (tokenAddresses.includes(LAPIS_ADDRESS)) await addPriceOf(prices, 'LAPIS', LAPIS_ADDRESS, 'CELO', CELO_TOKEN_ADDRESS)
+  if (tokenAddresses.includes(cSTAR_ADDRESS)) await addPriceOf(prices, 'cStar', cSTAR_ADDRESS, 'cUSD', USD_TOKEN_ADDRESS)
   return prices;
 }

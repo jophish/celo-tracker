@@ -14,15 +14,15 @@ type Props = {
 
 function App({ address, onClearAddress }: Props) {  
   const { loading, error, result: tokensInfo } = useAsync(async () => {
+    
     const tokenAmounts: TokenAmount[] = await fetchTokenAmounts(address)
     const ubeswapPooledTokens: PooledToken[] = await getUbeswapPooledTokens(address)
     const tripleRewardTokens: PooledToken[] = await getTripleRewardPool(address)
     const allPooledTokens = ubeswapPooledTokens.concat(tripleRewardTokens)
     const lockedCelo = await fetchLockedCelo(address)
-
+    
     const allTokenAddresses = tokenAmounts.map(tokenAmount => tokenAmount.address)
       .concat(...allPooledTokens.map(pooledToken => pooledToken.tokens))
-    
     const prices = await fetchTokenPrices(allTokenAddresses)
     for (const tokenInfo of tokenAmounts) {
       tokenInfo.usdPrice = tokenInfo.balance.multipliedBy(prices[tokenInfo.symbol])
@@ -65,7 +65,7 @@ function App({ address, onClearAddress }: Props) {
       </div>
       <h2 className="subtitle">Total</h2>
       {loading && <p className="disclaimer">Loading...</p>}
-      {error && <p className="disclaimer">{error}</p>}
+      {error && <p className="error">{error.message}</p>}
       <p className="balance">${!tokensInfo?.total ? '-' : tokensInfo?.total.toNumber().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
       <p className="disclaimer">Note that dollar values are estimates based on exchange rates on Ubeswap and may be slightly off</p>
       <div className="details-container">
