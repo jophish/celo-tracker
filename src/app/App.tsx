@@ -64,7 +64,9 @@ function App({ address, onClearAddress }: Props) {
         <button className="clear-address" onClick={onClearAddress}>Logout</button>
       </div>
       <h2 className="subtitle">Total</h2>
-      <p className="balance">${!tokensInfo?.total ? '...' : tokensInfo?.total.toNumber().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+      {loading && <p className="disclaimer">Loading...</p>}
+      {error && <p className="disclaimer">{error}</p>}
+      <p className="balance">${!tokensInfo?.total ? '-' : tokensInfo?.total.toNumber().toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
       <p className="disclaimer">Note that dollar values are estimates based on exchange rates on Ubeswap and may be slightly off</p>
       <div className="details-container">
         <div className="details-column">
